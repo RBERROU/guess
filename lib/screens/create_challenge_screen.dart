@@ -42,8 +42,15 @@ class _CreateChallengeScreenState extends State<CreateChallengeScreen> {
 
   Future<void> _start() async {
     if (_recording) return;
+    final blocked = RecordingService.blockedReason;
+    if (blocked != null) {
+      setState(() => _error = blocked);
+      return;
+    }
     if (!await _rec.hasPermission()) {
-      setState(() => _error = 'Le micro est refusé. Autorise-le dans les réglages.');
+      setState(() => _error =
+          'Le micro est refusé. Autorise-le dans les réglages du navigateur, '
+          'puis recharge la page.');
       return;
     }
     setState(() {

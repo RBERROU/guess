@@ -29,6 +29,28 @@ class RecordingService {
   final Uuid _uuid = const Uuid();
   Stopwatch? _stopwatch;
 
+  /// Les navigateurs n'exposent le micro que sur une origine sûre : HTTPS, ou
+  /// localhost. Sur une adresse en `http://` ou une IP locale, l'API micro
+  /// n'existe tout simplement pas — et l'erreur remontée ressemble à un refus
+  /// de permission, ce qui envoie chercher au mauvais endroit.
+  static bool get isSecureContext {
+    if (!kIsWeb) return true;
+    final u = Uri.base;
+    return u.scheme == 'https' ||
+        u.host == 'localhost' ||
+        u.host == '127.0.0.1';
+  }
+
+  /// Message précis quand la capture est impossible, `null` si tout va bien.
+  static String? get blockedReason {
+    if (!isSecureContext) {
+      return 'Ton navigateur bloque le micro parce que la page n\'est pas en '
+          'HTTPS (adresse actuelle : ${Uri.base.host}). Ouvre le site avec une '
+          'adresse commençant par https://';
+    }
+    return null;
+  }
+
   Future<bool> hasPermission() => _recorder.hasPermission();
   Future<bool> isRecording() => _recorder.isRecording();
 
