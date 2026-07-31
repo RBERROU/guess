@@ -1,0 +1,14 @@
+# Configuration de build Netlify pour Guess My Fart (Flutter web)
+# Meme approche que Just Fart : Netlify n'a pas Flutter, on le clone puis on build.
+# (Le cache du SDK via netlify-plugin-cache a ete tente puis abandonne sur Just Fart :
+# le plugin ne restaurait qu'une fraction des fichiers du clone, cassant la
+# compilation. On reclone a chaque fois, plus lent mais fiable.)
+[build]
+  publish = "build/web"
+  command = "rm -rf flutter && git clone https://github.com/flutter/flutter.git --depth 1 -b stable && export PATH=$PATH:$PWD/flutter/bin && flutter pub get && flutter build web --release"
+
+# Redirige toutes les routes vers index.html (app mono-page / PWA)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

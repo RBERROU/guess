@@ -1,0 +1,57 @@
+# Configuration Codemagic pour Guess My Fart (Flutter iOS -> TestFlight)
+# Calquee sur celle de Just Fart, qui fonctionne.
+#
+# Le passage par TestFlight n'est pas un luxe ici : le micro de Safari sur iOS
+# est capricieux en PWA, et l'enregistrement est TOUT le produit. Sur iPhone,
+# seul le build natif donne une capture fiable.
+#
+# PREREQUIS a faire une fois dans l'interface Codemagic :
+#  - Cle App Store Connect (role Admin) -> integration nommee ci-dessous
+#  - Certificat "Apple Distribution" dans Code signing identities
+#  - L'identifiant de bundle doit exister dans App Store Connect
+
+workflows:
+  ios-testflight:
+    name: Guess My Fart iOS - TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    integrations:
+      # A remplacer par le nom exact de l'integration creee dans Codemagic.
+      app_store_connect: GuessMyFart AppStore Key
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.guessmyfart.app
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        # Les identifiants Supabase sont en clair dans lib/config/, comme sur
+        # Just Fart : la cle anon est publique par conception.
+        BUILD_NUMBER: $PROJECT_BUILD_NUMBER
+
+    scripts:
+      - name: Recuperer les packages Flutter
+        script: flutter pub get
+
+      - name: Installer les pods iOS
+        script: find . -name "Podfile" -execdir pod install \;
+
+      - name: Appliquer la signature au projet Xcode
+        script: xcode-project use-profiles
+
+      - name: Build IPA (release)
+        script: |
+          flutter build ipa --release \
+            --build-number=$BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration

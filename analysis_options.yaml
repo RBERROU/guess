@@ -1,0 +1,7 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    # Banc d'essai lancé à la main hors application : les règles de production
+    # (pas de print, pas d'import relatif vers lib/) n'y ont pas de sens.
+    - tool/**
