@@ -57,6 +57,39 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     }
   }
 
+  /// Révéler sans attendre les 12 h. Réservé à l'auteur — c'est lui qui sait
+  /// si tout le monde a joué, et sans ça il faudrait attendre une demi-journée
+  /// pour voir le moindre classement.
+  Future<void> _revealNow(Challenge c) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Révéler maintenant ?'),
+        content: const Text(
+          'Ton pet deviendra audible et le classement s\'affichera. '
+          'Plus personne ne pourra soumettre après. C\'est irréversible.',
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Annuler')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Révéler')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _cloud.revealNow(c.id);
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Échec : $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,6 +150,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         challenge: _challenges[i],
         alreadySubmitted: _submitted.contains(_challenges[i].id),
         isMine: _challenges[i].authorId == _cloud.userId,
+        onReveal: () => _revealNow(_challenges[i]),
         onOpen: () async {
           final c = _challenges[i];
           if (c.isRevealed) {
@@ -140,12 +174,14 @@ class _ChallengeCard extends StatelessWidget {
   final bool alreadySubmitted;
   final bool isMine;
   final VoidCallback onOpen;
+  final VoidCallback onReveal;
 
   const _ChallengeCard({
     required this.challenge,
     required this.alreadySubmitted,
     required this.isMine,
     required this.onOpen,
+    required this.onReveal,
   });
 
   @override
@@ -206,11 +242,31 @@ class _ChallengeCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              Text(status,
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelLarge
-                      ?.copyWith(color: color)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      status,
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: color),
+                    ),
+                  ),
+                  if (isMine && !revealed)
+                    TextButton(
+                      onPressed: onReveal,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        textStyle: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                      child: const Text('Révéler'),
+                    ),
+                ],
+              ),
             ],
           ),
         ),
