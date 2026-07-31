@@ -91,6 +91,30 @@ void main() {
     expect(sMoyen, greaterThan(sLointain));
   });
 
+  test('une empreinte incomplète ne fait pas tomber la lecture', () {
+    // Cas réel : une empreinte écrite à la main pendant les tests de sécurité,
+    // sans enveloppe ni la plupart des champs. Ça avait planté l'app.
+    final partielle = Fingerprint.fromJson({'v': 1, 'duration': 1.5});
+    expect(partielle.durationSec, 1.5);
+    expect(partielle.envelope, isEmpty);
+    expect(partielle.isUsable, isFalse);
+
+    final vide = Fingerprint.fromJson({});
+    expect(vide.isUsable, isFalse);
+
+    // Types inattendus : on tolère plutôt que de lever une exception.
+    final bancale = Fingerprint.fromJson(
+        {'duration': 'deux', 'envelope': 'pas une liste', 'pitchHz': null});
+    expect(bancale.durationSec, 0);
+    expect(bancale.isUsable, isFalse);
+  });
+
+  test('une empreinte complète est jugée exploitable', () {
+    final f = Fingerprint.fromWav(makeWav(seconds: 1.2, pitchHz: 130, burstHz: 7));
+    expect(f.isUsable, isTrue);
+    expect(Fingerprint.fromJson(f.toJson()).isUsable, isTrue);
+  });
+
   test('la durée pèse : trois fois trop long est pénalisé', () {
     final court =
         Fingerprint.fromWav(makeWav(seconds: 1.0, pitchHz: 110, burstHz: 5));

@@ -32,9 +32,13 @@ create policy "chacun modifie son profil"
 -- `reveal_at` est la seule mécanique d'état : révélé = now() >= reveal_at.
 -- Pas de machine à états à maintenir, et la condition RLS reste une simple
 -- comparaison de dates. Pour révéler tout de suite, l'auteur avance la date.
+-- author_id pointe vers `profiles`, pas vers `auth.users` : c'est ce lien qui
+-- permet à l'API de rapatrier le pseudo en une seule requête. Sans clé
+-- étrangère entre les deux tables, la jointure est refusée.
+-- L'intégrité est la même, puisque profiles.id référence lui-même auth.users.
 create table if not exists challenges (
   id          uuid primary key default gen_random_uuid(),
-  author_id   uuid not null references auth.users(id) on delete cascade,
+  author_id   uuid not null references profiles(id) on delete cascade,
   group_code  text not null,
   created_at  timestamptz not null default now(),
   reveal_at   timestamptz not null,
@@ -96,7 +100,7 @@ create policy "l'auteur dépose le secret"
 create table if not exists submissions (
   id           uuid primary key default gen_random_uuid(),
   challenge_id uuid not null references challenges(id) on delete cascade,
-  player_id    uuid not null references auth.users(id) on delete cascade,
+  player_id    uuid not null references profiles(id) on delete cascade,  -- idem : permet la jointure du pseudo
   created_at   timestamptz not null default now(),
   audio_path   text not null,
   fingerprint  jsonb not null,

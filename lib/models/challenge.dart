@@ -62,25 +62,34 @@ class Challenge {
   bool get isRevealed => DateTime.now().isAfter(revealAt);
   Duration get timeLeft => revealAt.difference(DateTime.now());
 
-  factory Challenge.fromRow(Map<String, dynamic> r, {Map<String, dynamic>? secret}) {
-    return Challenge(
-      id: r['id'] as String,
-      authorId: r['author_id'] as String,
-      authorPseudo: (r['profiles'] as Map?)?['pseudo'] as String?,
-      groupCode: r['group_code'] as String,
-      createdAt: DateTime.parse(r['created_at'] as String).toLocal(),
-      revealAt: DateTime.parse(r['reveal_at'] as String).toLocal(),
-      durationHint: _enum(DurationHint.values, r['duration_hint']),
-      textureHint: _enum(TextureHint.values, r['texture_hint']),
-      rhythmHint: _enum(RhythmHint.values, r['rhythm_hint']),
-      pitchHint: _enum(PitchHint.values, r['pitch_hint']),
-      context: r['context'] as String?,
-      audioPath: secret?['audio_path'] as String?,
-      fingerprint: secret?['fingerprint'] == null
-          ? null
-          : Fingerprint.fromJson(
-              Map<String, dynamic>.from(secret!['fingerprint'] as Map)),
-    );
+  /// Lecture défensive : une ligne incomplète est ignorée plutôt que de faire
+  /// tomber la liste entière.
+  static Challenge? tryFromRow(Map<String, dynamic> r,
+      {Map<String, dynamic>? secret}) {
+    try {
+      final fp = secret?['fingerprint'];
+      return Challenge(
+        id: r['id'] as String,
+        authorId: r['author_id'] as String,
+        authorPseudo: (r['profiles'] as Map?)?['pseudo'] as String?,
+        groupCode: '${r['group_code'] ?? ''}',
+        createdAt: DateTime.tryParse('${r['created_at']}')?.toLocal() ??
+            DateTime.now(),
+        revealAt: DateTime.tryParse('${r['reveal_at']}')?.toLocal() ??
+            DateTime.now(),
+        durationHint: _enum(DurationHint.values, r['duration_hint']),
+        textureHint: _enum(TextureHint.values, r['texture_hint']),
+        rhythmHint: _enum(RhythmHint.values, r['rhythm_hint']),
+        pitchHint: _enum(PitchHint.values, r['pitch_hint']),
+        context: r['context'] as String?,
+        audioPath: secret?['audio_path'] as String?,
+        fingerprint: fp is Map
+            ? Fingerprint.fromJson(Map<String, dynamic>.from(fp))
+            : null,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   static T _enum<T extends Enum>(List<T> values, dynamic raw) {

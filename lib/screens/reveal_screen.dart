@@ -58,10 +58,11 @@ class _RevealScreenState extends State<RevealScreen> {
       }
 
       var ranked = <MapEntry<Submission, MatchScore>>[];
-      if (target != null) {
+      final usable = subs.where((s) => s.fingerprint.isUsable).toList();
+      if (target != null && target.isUsable && usable.isNotEmpty) {
         final scores = Matcher.rank(
           target,
-          {for (final s in subs) s: s.fingerprint},
+          {for (final s in usable) s: s.fingerprint},
           weights: weights,
         );
         ranked = scores;

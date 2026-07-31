@@ -73,17 +73,35 @@ class Fingerprint {
         'noisiness': _r(noisiness),
       };
 
+  /// Lecture **tolérante** : un champ absent ou d'un type inattendu donne une
+  /// valeur neutre au lieu de faire tomber l'écran.
+  ///
+  /// Ce n'est pas de la complaisance : les empreintes vivent en base et leur
+  /// format évoluera (voir `version`). Une ancienne empreinte, ou une écrite
+  /// à la main, ne doit jamais empêcher d'afficher un classement.
   factory Fingerprint.fromJson(Map<String, dynamic> j) => Fingerprint(
-        durationSec: (j['duration'] as num).toDouble(),
-        envelope: (j['envelope'] as List).map((e) => (e as num).toDouble()).toList(),
-        burstRate: (j['burstRate'] as num).toDouble(),
-        envelopeRoughness: (j['envelopeRoughness'] as num).toDouble(),
-        centroidHz: (j['centroidHz'] as num).toDouble(),
-        centroidSlope: (j['centroidSlope'] as num).toDouble(),
-        pitchHz: (j['pitchHz'] as num).toDouble(),
-        pitchSlope: (j['pitchSlope'] as num).toDouble(),
-        noisiness: (j['noisiness'] as num).toDouble(),
+        durationSec: _num(j['duration']),
+        envelope: _list(j['envelope']),
+        burstRate: _num(j['burstRate']),
+        envelopeRoughness: _num(j['envelopeRoughness']),
+        centroidHz: _num(j['centroidHz']),
+        centroidSlope: _num(j['centroidSlope']),
+        pitchHz: _num(j['pitchHz']),
+        pitchSlope: _num(j['pitchSlope']),
+        noisiness: _num(j['noisiness'], fallback: 1),
       );
+
+  /// Une empreinte sans enveloppe ni durée n'est pas comparable : on peut
+  /// l'afficher, mais la classer n'aurait aucun sens.
+  bool get isUsable => durationSec > 0 && envelope.length >= 4;
+
+  static double _num(dynamic v, {double fallback = 0}) =>
+      v is num ? v.toDouble() : fallback;
+
+  static List<double> _list(dynamic v) {
+    if (v is! List) return const [];
+    return v.map((e) => e is num ? e.toDouble() : 0.0).toList();
+  }
 
   static double _r(double v) => (v * 10000).roundToDouble() / 10000;
 

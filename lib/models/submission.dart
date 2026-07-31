@@ -26,27 +26,43 @@ class Submission {
     this.score,
   });
 
-  factory Submission.fromRow(Map<String, dynamic> r) => Submission(
+  /// Lecture défensive : une ligne mal formée est ignorée (`null`) plutôt que
+  /// de faire tomber tout l'écran de révélation.
+  static Submission? tryFromRow(Map<String, dynamic> r) {
+    try {
+      return Submission(
         id: r['id'] as String,
         challengeId: r['challenge_id'] as String,
         playerId: r['player_id'] as String,
         playerPseudo: (r['profiles'] as Map?)?['pseudo'] as String?,
-        createdAt: DateTime.parse(r['created_at'] as String).toLocal(),
-        audioPath: r['audio_path'] as String,
-        fingerprint: Fingerprint.fromJson(
-            Map<String, dynamic>.from(r['fingerprint'] as Map)),
-        score: r['score'] == null
-            ? null
-            : _score(Map<String, dynamic>.from(r['score'] as Map)),
+        createdAt: DateTime.tryParse('${r['created_at']}')?.toLocal() ??
+            DateTime.now(),
+        audioPath: '${r['audio_path'] ?? ''}',
+        fingerprint: r['fingerprint'] is Map
+            ? Fingerprint.fromJson(
+                Map<String, dynamic>.from(r['fingerprint'] as Map))
+            : const Fingerprint(
+                durationSec: 0, envelope: [], burstRate: 0,
+                envelopeRoughness: 0, centroidHz: 0, centroidSlope: 0,
+                pitchHz: 0, pitchSlope: 0, noisiness: 1),
+        score: r['score'] is Map
+            ? _score(Map<String, dynamic>.from(r['score'] as Map))
+            : null,
       );
+    } catch (_) {
+      return null;
+    }
+  }
 
   static MatchScore _score(Map<String, dynamic> j) => MatchScore(
-        total: (j['total'] as num).toDouble(),
-        duration: (j['duration'] as num).toDouble(),
-        rhythm: (j['rhythm'] as num).toDouble(),
-        pitch: (j['pitch'] as num).toDouble(),
-        texture: (j['texture'] as num).toDouble(),
+        total: _d(j['total']),
+        duration: _d(j['duration']),
+        rhythm: _d(j['rhythm']),
+        pitch: _d(j['pitch']),
+        texture: _d(j['texture']),
       );
+
+  static double _d(dynamic v) => v is num ? v.toDouble() : 0;
 
   Submission withScore(MatchScore s) => Submission(
         id: id, challengeId: challengeId, playerId: playerId,

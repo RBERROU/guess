@@ -41,7 +41,8 @@ class CloudService {
       } catch (_) {
         secret = null;
       }
-      out.add(Challenge.fromRow(r, secret: secret));
+      final c = Challenge.tryFromRow(r, secret: secret);
+      if (c != null) out.add(c);
     }
     return out;
   }
@@ -114,7 +115,8 @@ class CloudService {
         .order('created_at');
     return (rows as List)
         .cast<Map<String, dynamic>>()
-        .map(Submission.fromRow)
+        .map(Submission.tryFromRow)
+        .whereType<Submission>()
         .toList();
   }
 
@@ -181,8 +183,12 @@ class CloudService {
 
     for (final c in revealed) {
       final target = c.fingerprint;
-      if (target == null) continue;
-      final subs = await listSubmissions(c.id);
+      if (target == null || !target.isUsable) continue;
+      // Une empreinte inexploitable ne se classe pas : la compter fausserait
+      // le classement de tout le monde.
+      final subs = (await listSubmissions(c.id))
+          .where((s) => s.fingerprint.isUsable)
+          .toList();
       if (subs.isEmpty) continue;
 
       final ranked = Matcher.rank(
