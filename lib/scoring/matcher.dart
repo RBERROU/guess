@@ -205,5 +205,11 @@ class Matcher {
     return a.sign == b.sign ? 1 : 0;
   }
 
+  /// Score en pourcentage, à la décimale près.
+  ///
+  /// Une décimale et pas plus : au-delà on afficherait une précision que la
+  /// mesure n'a pas. C'est un **indice de similarité**, pas une probabilité —
+  /// ce qu'il faut lire, c'est l'écart entre deux joueurs, pas la valeur
+  /// absolue.
   static double _pct(double v) => (v.clamp(0.0, 1.0) * 1000).round() / 10;
 }

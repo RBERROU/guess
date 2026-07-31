@@ -66,3 +66,40 @@ class WavReader {
   static String _tag(Uint8List b, int at) =>
       String.fromCharCodes(b.sublist(at, at + 4));
 }
+
+/// Fabrique un WAV à partir d'échantillons PCM 16 bits bruts.
+///
+/// Indispensable parce qu'on capte désormais le flux du micro directement :
+/// selon la plateforme, l'enregistreur produit du AAC, de l'Opus ou du WAV,
+/// et aucun de ces formats n'est décodable en Dart pur. Partir du PCM et
+/// écrire l'en-tête soi-même supprime toute dépendance au navigateur.
+class WavWriter {
+  static Uint8List fromPcm16(Uint8List pcm, {int sampleRate = 22050, int channels = 1}) {
+    final header = ByteData(44);
+    void tag(int off, String s) {
+      for (int i = 0; i < 4; i++) {
+        header.setUint8(off + i, s.codeUnitAt(i));
+      }
+    }
+
+    final byteRate = sampleRate * channels * 2;
+    tag(0, 'RIFF');
+    header.setUint32(4, 36 + pcm.length, Endian.little);
+    tag(8, 'WAVE');
+    tag(12, 'fmt ');
+    header.setUint32(16, 16, Endian.little);       // taille du chunk fmt
+    header.setUint16(20, 1, Endian.little);        // PCM non compressé
+    header.setUint16(22, channels, Endian.little);
+    header.setUint32(24, sampleRate, Endian.little);
+    header.setUint32(28, byteRate, Endian.little);
+    header.setUint16(32, channels * 2, Endian.little);
+    header.setUint16(34, 16, Endian.little);       // bits par échantillon
+    tag(36, 'data');
+    header.setUint32(40, pcm.length, Endian.little);
+
+    final out = Uint8List(44 + pcm.length);
+    out.setRange(0, 44, header.buffer.asUint8List());
+    out.setRange(44, out.length, pcm);
+    return out;
+  }
+}

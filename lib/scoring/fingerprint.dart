@@ -14,7 +14,10 @@ import 'wav.dart';
 class Fingerprint {
   /// Version du calcul. À incrémenter si les caractéristiques changent, pour
   /// pouvoir distinguer les empreintes recalculables des anciennes.
-  static const int version = 1;
+  ///
+  /// v2 : enveloppe passée de 16 à 32 points. Le doublement de résolution
+  /// permet de distinguer deux rythmes proches, ce que 16 points lissaient.
+  static const int version = 2;
 
   /// Durée utile en secondes, silences de début et de fin retirés.
   final double durationSec;
@@ -107,9 +110,9 @@ class Fingerprint {
 
   // ---------------------------------------------------------------- calcul
 
-  static const int _envPoints = 16;
+  static const int _envPoints = 32;
   static const int _frame = 1024;
-  static const int _hop = 256;
+  static const int _hop = 128;   // pas plus fin : meilleure résolution temporelle
 
   static Fingerprint fromWav(Uint8List wavBytes) => fromPcm(WavReader.decode(wavBytes));
 

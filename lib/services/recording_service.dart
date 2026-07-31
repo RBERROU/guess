@@ -6,7 +6,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:uuid/uuid.dart';
 
+import 'dart:async';
+
 import '../scoring/fingerprint.dart';
+import '../scoring/wav.dart';
 import 'file_io_stub.dart' if (dart.library.io) 'file_io_native.dart';
 
 /// Capture audio **en WAV**, et non en AAC comme Just Fart.
@@ -33,20 +36,49 @@ class RecordingService {
   Stream<Amplitude> amplitude() =>
       _recorder.onAmplitudeChanged(const Duration(milliseconds: 120));
 
+  StreamSubscription<Uint8List>? _sub;
+  final List<int> _pcm = [];
+  bool _streaming = false;
+  String _filePath = '';
+
+  /// On capte le **flux PCM brut** plutôt qu'un fichier encodé.
+  ///
+  /// Selon la plateforme et le navigateur, l'enregistreur produit du AAC, de
+  /// l'Opus ou du WAV — et aucun de ces formats compressés n'est décodable en
+  /// Dart pur. En partant du PCM et en écrivant l'en-tête WAV nous-mêmes,
+  /// l'analyse fonctionne partout, Safari compris.
+  ///
+  /// Repli sur l'enregistrement fichier si le flux n'est pas disponible.
   Future<void> start() async {
-    var path = '';
-    if (!kIsWeb) {
-      final dir = await getApplicationDocumentsDirectory();
-      path = '${dir.path}/gmf_${_uuid.v4()}.wav';
+    _pcm.clear();
+    _streaming = false;
+    _filePath = '';
+    try {
+      final stream = await _recorder.startStream(
+        const RecordConfig(
+          encoder: AudioEncoder.pcm16bits,
+          sampleRate: sampleRate,
+          numChannels: 1,
+        ),
+      );
+      _streaming = true;
+      _sub = stream.listen(_pcm.addAll);
+    } catch (_) {
+      var path = '';
+      if (!kIsWeb) {
+        final dir = await getApplicationDocumentsDirectory();
+        path = '${dir.path}/gmf_${_uuid.v4()}.wav';
+      }
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.wav,
+          sampleRate: sampleRate,
+          numChannels: 1,
+        ),
+        path: path,
+      );
+      _filePath = path;
     }
-    await _recorder.start(
-      const RecordConfig(
-        encoder: AudioEncoder.wav,
-        sampleRate: sampleRate,
-        numChannels: 1,
-      ),
-      path: path,
-    );
     _stopwatch = Stopwatch()..start();
   }
 
@@ -57,10 +89,37 @@ class RecordingService {
     final elapsed = _stopwatch?.elapsedMilliseconds ?? 0;
     _stopwatch?.stop();
     _stopwatch = null;
-    if (path == null) return null;
 
-    final bytes = await _read(path);
+    Uint8List? bytes;
+    String outPath = path ?? _filePath;
+
+    if (_streaming) {
+      await _sub?.cancel();
+      _sub = null;
+      _streaming = false;
+      if (_pcm.isEmpty) return null;
+      bytes = WavWriter.fromPcm16(
+        Uint8List.fromList(_pcm),
+        sampleRate: sampleRate,
+      );
+      _pcm.clear();
+      // Sur mobile, on écrit le WAV pour pouvoir le réécouter avant envoi.
+      if (!kIsWeb) {
+        try {
+          final dir = await getApplicationDocumentsDirectory();
+          outPath = '${dir.path}/gmf_${_uuid.v4()}.wav';
+          await writeLocalFile(outPath, bytes);
+        } catch (_) {
+          outPath = '';
+        }
+      }
+    } else {
+      if (path == null) return null;
+      bytes = await _read(path);
+    }
+
     if (bytes == null || bytes.isEmpty) return null;
+    final resolvedPath = outPath;
 
     Fingerprint? print;
     try {
@@ -71,7 +130,7 @@ class RecordingService {
       print = null;
     }
     return Recorded(
-      path: path,
+      path: resolvedPath,
       bytes: bytes,
       durationMs: elapsed,
       fingerprint: print,
@@ -79,6 +138,10 @@ class RecordingService {
   }
 
   Future<void> cancel() async {
+    await _sub?.cancel();
+    _sub = null;
+    _streaming = false;
+    _pcm.clear();
     await _recorder.cancel();
     _stopwatch = null;
   }

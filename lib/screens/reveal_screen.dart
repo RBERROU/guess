@@ -223,11 +223,23 @@ class _Row extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
-                Text(
-                  score.total.toStringAsFixed(1),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: winner ? scheme.primary : null,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${score.total.toStringAsFixed(1)} %',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w700,
+                        height: 1,
+                        color: winner ? scheme.primary : scheme.onSurface,
                       ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text('similarité',
+                        style: TextStyle(
+                            fontSize: 11, color: scheme.onSurfaceVariant)),
+                  ],
                 ),
                 IconButton(
                   onPressed: onPlay,
@@ -245,6 +257,15 @@ class _Row extends StatelessWidget {
                 _Axis('hauteur', score.pitch),
                 _Axis('texture', score.texture),
               ],
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Meilleur sur ${score.bestAxis}, à revoir sur ${score.worstAxis}.',
+                style: TextStyle(
+                    fontSize: 12.5, color: scheme.onSurfaceVariant),
+              ),
             ),
           ],
         ),
@@ -273,13 +294,13 @@ class _Axis extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: (value / 100).clamp(0.0, 1.0),
-                minHeight: 5,
-                backgroundColor:
-                    scheme.surfaceContainerHighest.withValues(alpha: .5),
+                minHeight: 6,
+                backgroundColor: const Color(0xFFEFEFF4),
               ),
             ),
-            const SizedBox(height: 4),
-            Text(label, style: Theme.of(context).textTheme.labelSmall),
+            const SizedBox(height: 5),
+            Text('$label ${value.toStringAsFixed(0)}',
+                style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
           ],
         ),
       ),
