@@ -63,18 +63,61 @@ class RecordingService {
   bool _streaming = false;
   String _filePath = '';
 
-  /// On capte le **flux PCM brut** plutôt qu'un fichier encodé.
+  /// Dernière erreur rencontrée au démarrage, pour l'écran de diagnostic.
+  String? lastError;
+
+  /// Il faut du **PCM décodable en Dart pur** : ni AAC ni Opus ne le sont, et
+  /// c'est eux que produisent la plupart des navigateurs par défaut.
   ///
-  /// Selon la plateforme et le navigateur, l'enregistreur produit du AAC, de
-  /// l'Opus ou du WAV — et aucun de ces formats compressés n'est décodable en
-  /// Dart pur. En partant du PCM et en écrivant l'en-tête WAV nous-mêmes,
-  /// l'analyse fonctionne partout, Safari compris.
-  ///
-  /// Repli sur l'enregistrement fichier si le flux n'est pas disponible.
+  /// On essaie donc, dans l'ordre : enregistrement fichier en WAV s'il est
+  /// annoncé supporté (le chemin le plus éprouvé), puis capture du flux PCM
+  /// brut dont on écrit l'en-tête nous-mêmes, puis en dernier recours
+  /// n'importe quel format — l'audio est alors conservé mais non analysable,
+  /// ce que l'interface signale plutôt que d'échouer en silence.
   Future<void> start() async {
     _pcm.clear();
     _streaming = false;
     _filePath = '';
+    lastError = null;
+
+    if (await _trySupported(AudioEncoder.wav)) {
+      _stopwatch = Stopwatch()..start();
+      return;
+    }
+    if (await _tryStream()) {
+      _stopwatch = Stopwatch()..start();
+      return;
+    }
+    for (final e in [AudioEncoder.pcm16bits, AudioEncoder.aacLc, AudioEncoder.opus]) {
+      if (await _trySupported(e)) {
+        _stopwatch = Stopwatch()..start();
+        return;
+      }
+    }
+    throw StateError(lastError ?? 'aucun format d\'enregistrement disponible');
+  }
+
+  Future<bool> _trySupported(AudioEncoder encoder) async {
+    try {
+      if (!await _recorder.isEncoderSupported(encoder)) return false;
+      var path = '';
+      if (!kIsWeb) {
+        final dir = await getApplicationDocumentsDirectory();
+        path = '${dir.path}/gmf_${_uuid.v4()}.${encoder == AudioEncoder.wav ? "wav" : "bin"}';
+      }
+      await _recorder.start(
+        RecordConfig(encoder: encoder, sampleRate: sampleRate, numChannels: 1),
+        path: path,
+      );
+      _filePath = path;
+      return true;
+    } catch (e) {
+      lastError = '$encoder : $e';
+      return false;
+    }
+  }
+
+  Future<bool> _tryStream() async {
     try {
       final stream = await _recorder.startStream(
         const RecordConfig(
@@ -84,24 +127,47 @@ class RecordingService {
         ),
       );
       _streaming = true;
-      _sub = stream.listen(_pcm.addAll);
-    } catch (_) {
-      var path = '';
-      if (!kIsWeb) {
-        final dir = await getApplicationDocumentsDirectory();
-        path = '${dir.path}/gmf_${_uuid.v4()}.wav';
-      }
-      await _recorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.wav,
-          sampleRate: sampleRate,
-          numChannels: 1,
-        ),
-        path: path,
-      );
-      _filePath = path;
+      _sub = stream.listen(_pcm.addAll, onError: (Object e) {
+        lastError = 'flux : $e';
+      });
+      return true;
+    } catch (e) {
+      lastError = 'flux : $e';
+      _streaming = false;
+      return false;
     }
-    _stopwatch = Stopwatch()..start();
+  }
+
+  /// Ce que le navigateur expose réellement. Sert à trancher sans deviner
+  /// quand la capture échoue sur un appareil qu'on n'a pas sous la main.
+  Future<Map<String, String>> diagnostics() async {
+    final out = <String, String>{
+      'Adresse': '${Uri.base.scheme}://${Uri.base.host}',
+      'Connexion sécurisée': isSecureContext ? 'oui' : 'NON — micro bloqué',
+      'Plateforme': kIsWeb ? 'navigateur' : 'application native',
+    };
+    try {
+      out['Permission micro'] =
+          await _recorder.hasPermission() ? 'accordée' : 'REFUSÉE';
+    } catch (e) {
+      out['Permission micro'] = 'erreur : $e';
+    }
+    for (final e in [
+      AudioEncoder.wav,
+      AudioEncoder.pcm16bits,
+      AudioEncoder.aacLc,
+      AudioEncoder.opus,
+    ]) {
+      final name = e.name;
+      try {
+        out['Format $name'] =
+            await _recorder.isEncoderSupported(e) ? 'supporté' : 'non supporté';
+      } catch (err) {
+        out['Format $name'] = 'erreur : $err';
+      }
+    }
+    if (lastError != null) out['Dernière erreur'] = lastError!;
+    return out;
   }
 
   /// Arrête, relit les octets et calcule l'empreinte dans la foulée.

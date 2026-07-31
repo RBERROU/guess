@@ -5,6 +5,7 @@ import '../models/stats.dart';
 import '../services/auth_service.dart';
 import '../services/cloud_service.dart';
 import '../theme/app_theme.dart';
+import 'diagnostic_screen.dart';
 
 /// Profil calqué sur la capture « Pooper » : avatar rond, pseudo en gras,
 /// date d'arrivée, deux boutons gris, puis la grille de tuiles de statistiques
@@ -246,6 +247,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       'Tout est recalculé à chaque affichage depuis les empreintes '
                       'audio, rien n\'est figé. Si on affine la mesure, les '
                       'classements passés suivent.',
+                      style: TextStyle(color: AppTheme.muted, height: 1.35),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SectionCard(
+                    title: 'Le micro ne marche pas ?',
+                    actionLabel: 'Diagnostic',
+                    onAction: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => const DiagnosticScreen()),
+                    ),
+                    child: const Text(
+                      'Cet écran dit ce que ton navigateur autorise vraiment, '
+                      'et permet de tester la capture en deux secondes.',
                       style: TextStyle(color: AppTheme.muted, height: 1.35),
                     ),
                   ),
