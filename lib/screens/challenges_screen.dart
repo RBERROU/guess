@@ -150,30 +150,21 @@ class _ChallengeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final revealed = challenge.isRevealed;
 
     final (String status, Color color) = revealed
-        ? ('Révélé — voir le classement', scheme.primary)
+        ? ('Révélé — voir le classement', AppTheme.accent)
         : isMine
-            ? ('Ton défi — en attente des autres', scheme.onSurfaceVariant)
+            ? ('Ton défi — en attente des autres', AppTheme.muted)
             : alreadySubmitted
-                ? ('Tentative envoyée', scheme.onSurfaceVariant)
-                : ('À toi de jouer', scheme.primary);
+                ? ('Tentative envoyée', AppTheme.muted)
+                : ('À toi de jouer', AppTheme.accent);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(
-          color: revealed
-              ? AppTheme.gas.withValues(alpha: .45)
-              : AppTheme.line,
-        ),
-      ),
       child: InkWell(
         onTap: onOpen,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -184,15 +175,17 @@ class _ChallengeCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       isMine ? 'Ton pet' : 'Le pet de ${challenge.authorPseudo ?? "?"}',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.ink),
                     ),
                   ),
                   if (!revealed)
                     Text(
                       _left(challenge.timeLeft),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
+                      style: const TextStyle(
+                          fontSize: 13, color: AppTheme.muted),
                     ),
                 ],
               ),
@@ -239,15 +232,17 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: .5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: .4)),
+        color: AppTheme.raised,
+        borderRadius: BorderRadius.circular(9),
       ),
-      child: Text(text, style: Theme.of(context).textTheme.labelMedium),
+      child: Text(
+        text,
+        style: const TextStyle(
+            fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.ink),
+      ),
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 /// Gros bouton d'enregistrement : on maintient pour enregistrer, on relâche
 /// pour arrêter. Plus direct qu'un appui/re-appui pour des sons d'une seconde.
 class RecordButton extends StatelessWidget {
@@ -18,7 +20,7 @@ class RecordButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    const red = Color(0xFFFF3B30);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -32,29 +34,25 @@ class RecordButton extends StatelessWidget {
             height: recording ? 168 : 148,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: recording ? scheme.error : scheme.primary,
+              color: recording ? red : AppTheme.accent,
               boxShadow: [
-                if (recording)
-                  BoxShadow(
-                    color: scheme.error.withValues(alpha: .45),
-                    blurRadius: 34,
-                    spreadRadius: 6,
-                  ),
+                BoxShadow(
+                  color: (recording ? red : AppTheme.accent)
+                      .withValues(alpha: recording ? .38 : .22),
+                  blurRadius: recording ? 34 : 18,
+                  spreadRadius: recording ? 6 : 0,
+                  offset: const Offset(0, 6),
+                ),
               ],
             ),
-            child: Icon(
-              recording ? Icons.stop_rounded : Icons.mic_rounded,
-              size: 62,
-              color: scheme.onPrimary,
-            ),
+            child: const Icon(Icons.mic_rounded, size: 62, color: Colors.white),
           ),
         ),
         const SizedBox(height: 16),
         Text(
           recording ? 'Relâche pour arrêter' : idleLabel,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 15, color: AppTheme.muted),
         ),
       ],
     );

@@ -55,7 +55,7 @@ class _StandingsScreenState extends State<StandingsScreen> {
         actions: [
           IconButton(
             onPressed: _load,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh_rounded, color: AppTheme.accent),
             tooltip: 'Recalculer',
           ),
         ],
@@ -125,40 +125,39 @@ class _StandingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final podium = rank <= 3;
+
+    const medals = [AppTheme.tYellow, Color(0xFFAFAFB6), Color(0xFFCD8C5C)];
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isMe ? AppTheme.gas.withValues(alpha: .55) : AppTheme.line,
-        ),
+        borderRadius: BorderRadius.circular(14),
+        border: isMe ? Border.all(color: AppTheme.accent, width: 1.4) : null,
       ),
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 36,
+            height: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: podium
-                  ? AppTheme.trophy.withValues(alpha: .18)
+                  ? medals[rank - 1].withValues(alpha: .18)
                   : AppTheme.raised,
             ),
             child: Text(
               '$rank',
               style: TextStyle(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 fontSize: 15,
-                color: podium ? AppTheme.trophy : scheme.onSurfaceVariant,
+                color: podium ? medals[rank - 1] : AppTheme.muted,
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 13),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,15 +165,16 @@ class _StandingRow extends StatelessWidget {
                 Text(
                   '${stats.pseudo}${isMe ? " · toi" : ""}',
                   style: const TextStyle(
-                      fontWeight: FontWeight.w700, fontSize: 15.5),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: AppTheme.ink),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
-                  '${stats.attempts} tentative${stats.attempts > 1 ? "s" : ""}'
-                  ' · ${stats.challengesCreated} défi${stats.challengesCreated > 1 ? "s" : ""} lancé${stats.challengesCreated > 1 ? "s" : ""}'
+                  '${stats.attempts} imitation${stats.attempts > 1 ? "s" : ""}'
+                  ' · ${stats.challengesCreated} défi${stats.challengesCreated > 1 ? "s" : ""}'
                   '${stats.avgScore > 0 ? " · moy. ${stats.avgScore.toStringAsFixed(0)}" : ""}',
-                  style: TextStyle(
-                      fontSize: 12.5, color: scheme.onSurfaceVariant),
+                  style: const TextStyle(fontSize: 13, color: AppTheme.muted),
                 ),
               ],
             ),
@@ -184,17 +184,16 @@ class _StandingRow extends StatelessWidget {
             children: [
               Text(
                 '${stats.wins}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 22,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   height: 1,
-                  color: stats.wins > 0 ? AppTheme.trophy : scheme.onSurface,
+                  color: AppTheme.ink,
                 ),
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 2),
               Text('victoire${stats.wins > 1 ? "s" : ""}',
-                  style:
-                      TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+                  style: const TextStyle(fontSize: 11.5, color: AppTheme.muted)),
             ],
           ),
         ],

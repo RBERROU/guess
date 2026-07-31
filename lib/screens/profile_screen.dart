@@ -6,8 +6,9 @@ import '../services/auth_service.dart';
 import '../services/cloud_service.dart';
 import '../theme/app_theme.dart';
 
-/// Le profil, en tuiles de statistiques — le motif repris des apps de
-/// référence, parce que c'est lui qui donne envie de revenir voir ses chiffres.
+/// Profil calqué sur la capture « Pooper » : avatar rond, pseudo en gras,
+/// date d'arrivée, deux boutons gris, puis la grille de tuiles de statistiques
+/// et des cartes de section.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -61,12 +62,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           controller: ctrl,
           autofocus: true,
           maxLength: 20,
-          decoration: const InputDecoration(hintText: 'CaptainBrap'),
+          decoration: const InputDecoration(hintText: 'CaptnFart'),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
-          FilledButton(
+          TextButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
             child: const Text('Enregistrer'),
           ),
@@ -80,7 +81,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final s = _me;
 
     return Scaffold(
@@ -89,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           IconButton(
             onPressed: _load,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh_rounded, color: AppTheme.accent),
             tooltip: 'Rafraîchir',
           ),
         ],
@@ -99,149 +99,155 @@ class _ProfileScreenState extends State<ProfileScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
                 children: [
                   Row(
                     children: [
                       Container(
-                        width: 72,
-                        height: 72,
+                        width: 78,
+                        height: 78,
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: AppTheme.gas.withValues(alpha: .16),
+                        decoration: const BoxDecoration(
+                          color: AppTheme.surface,
                           shape: BoxShape.circle,
-                          border: Border.all(
-                              color: AppTheme.gas.withValues(alpha: .4)),
                         ),
-                        child: const Text('💨', style: TextStyle(fontSize: 32)),
+                        child: const Text('💨', style: TextStyle(fontSize: 36)),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(s?.pseudo ?? 'Toi',
-                                style:
-                                    Theme.of(context).textTheme.headlineSmall),
-                            const SizedBox(height: 4),
+                            Text(
+                              s?.pseudo ?? 'Toi',
+                              style: const TextStyle(
+                                fontSize: 27,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.ink,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
                             Text(
                               _rank > 0
-                                  ? '$_rankᵉ sur $_total dans le groupe'
+                                  ? '$_rank sur $_total dans le groupe'
                                   : 'Pas encore classé',
-                              style: TextStyle(
-                                  color: scheme.onSurfaceVariant, fontSize: 13),
+                              style: const TextStyle(
+                                  color: AppTheme.muted, fontSize: 15),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: OutlinedButton(
                           onPressed: _editPseudo,
-                          icon: const Icon(Icons.edit_rounded, size: 18),
-                          label: const Text('Changer de pseudo'),
+                          child: const Text('Changer de pseudo'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _load,
+                          child: const Text('Actualiser'),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 18),
                   GridView.count(
-                    crossAxisCount: 2,
+                    crossAxisCount: 4,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
-                    childAspectRatio: 1.55,
+                    childAspectRatio: 0.82,
                     children: [
                       StatTile(
                         icon: Icons.emoji_events_rounded,
-                        color: AppTheme.trophy,
+                        color: AppTheme.tYellow,
                         value: '${s?.wins ?? 0}',
                         label: 'Victoires',
                       ),
                       StatTile(
                         icon: Icons.military_tech_rounded,
-                        color: const Color(0xFF7FB2E5),
+                        color: AppTheme.tViolet,
                         value: '${s?.podiums ?? 0}',
                         label: 'Podiums',
                       ),
                       StatTile(
                         icon: Icons.mic_rounded,
-                        color: AppTheme.gas,
+                        color: AppTheme.tGreen,
                         value: '${s?.attempts ?? 0}',
-                        label: 'Imitations envoyées',
+                        label: 'Imitations',
                       ),
                       StatTile(
                         icon: Icons.air_rounded,
-                        color: const Color(0xFFD98BD3),
+                        color: AppTheme.tOrange,
                         value: '${s?.challengesCreated ?? 0}',
-                        label: 'Défis lancés',
+                        label: 'Défis',
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  GridView.count(
+                    crossAxisCount: 4,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 0.82,
+                    children: [
                       StatTile(
                         icon: Icons.star_rounded,
-                        color: const Color(0xFFE5C15A),
+                        color: AppTheme.tPink,
                         value: (s?.bestScore ?? 0).toStringAsFixed(0),
-                        label: 'Meilleur score',
+                        label: 'Meilleur',
                       ),
                       StatTile(
                         icon: Icons.show_chart_rounded,
-                        color: const Color(0xFF8FD9A8),
+                        color: AppTheme.tBlue,
                         value: (s?.avgScore ?? 0).toStringAsFixed(0),
-                        label: 'Score moyen',
+                        label: 'Moyenne',
+                      ),
+                      StatTile(
+                        icon: Icons.percent_rounded,
+                        color: AppTheme.tPurple,
+                        value: (s?.winRate ?? 0).toStringAsFixed(0),
+                        label: 'Réussite',
+                      ),
+                      StatTile(
+                        icon: Icons.groups_rounded,
+                        color: AppTheme.tRed,
+                        value: '$_total',
+                        label: 'Joueurs',
                       ),
                     ],
                   ),
                   const SizedBox(height: 22),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.groups_rounded, size: 20),
-                              const SizedBox(width: 10),
-                              Text('Groupe',
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium),
-                              const Spacer(),
-                              Text(
-                                AppConfig.groupCode,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Tout le monde partage le même groupe pour l\'instant. '
-                            'Les groupes séparés viendront quand le jeu aura fait '
-                            'ses preuves.',
-                            style: TextStyle(
-                                color: scheme.onSurfaceVariant,
-                                fontSize: 13,
-                                height: 1.4),
-                          ),
-                        ],
-                      ),
+                  SectionCard(
+                    title: 'Groupe',
+                    actionLabel: AppConfig.groupCode,
+                    onAction: () {},
+                    child: const Text(
+                      'Tout le monde partage le même groupe pour l\'instant. '
+                      'Les groupes séparés viendront quand le jeu aura fait ses preuves.',
+                      style: TextStyle(color: AppTheme.muted, height: 1.35),
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Les scores sont recalculés à chaque affichage depuis les '
-                    'empreintes audio. Si on affine la mesure, les classements '
-                    'passés suivent.',
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: scheme.onSurfaceVariant.withValues(alpha: .8),
-                        height: 1.4),
+                  const SizedBox(height: 12),
+                  const SectionCard(
+                    title: 'Comment les scores marchent',
+                    child: Text(
+                      'Tout est recalculé à chaque affichage depuis les empreintes '
+                      'audio, rien n\'est figé. Si on affine la mesure, les '
+                      'classements passés suivent.',
+                      style: TextStyle(color: AppTheme.muted, height: 1.35),
+                    ),
                   ),
                 ],
               ),
