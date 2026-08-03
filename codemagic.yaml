@@ -24,7 +24,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.guessmyfart.app
+        bundle_identifier: com.bematerial.guessmyfart
       flutter: stable
       xcode: latest
       cocoapods: default

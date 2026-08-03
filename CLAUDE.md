@@ -128,7 +128,8 @@ La migration 001 existe parce que `challenges` et `submissions` référençaient
 
 | | |
 |---|---|
-| Dépôt | `github.com/RBERROU/guess` (le dépôt s'appelle `guess`, le projet Flutter `guessmyfart`, l'identifiant `com.guessmyfart.app` — trois noms, c'est normal) |
+| Dépôt | `github.com/RBERROU/guess` (le dépôt s'appelle `guess`, le projet Flutter `guessmyfart`, l'identifiant iOS `com.bematerial.guessmyfart` — trois noms, c'est normal) |
+| ⚠️ Android | garde l'ancien `com.guessmyfart.app` : changer l'`applicationId` obligerait à déplacer l'arborescence Kotlin. Sans conséquence tant que rien n'est publié sur Play, mais à aligner avant la première publication Android. |
 | Web | **guessmyfart.netlify.app**, redéployé à chaque push sur `main` (5-8 min : Netlify reclone le SDK Flutter) |
 | Supabase | projet `hbycfyxcwydygjbwxvsl`, distinct de Just Fart |
 | iOS | `codemagic.yaml` prêt mais **jamais lancé** — pas de build TestFlight à ce jour |
