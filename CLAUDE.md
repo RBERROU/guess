@@ -132,11 +132,36 @@ La migration 001 existe parce que `challenges` et `submissions` référençaient
 | ⚠️ Android | garde l'ancien `com.guessmyfart.app` : changer l'`applicationId` obligerait à déplacer l'arborescence Kotlin. Sans conséquence tant que rien n'est publié sur Play, mais à aligner avant la première publication Android. |
 | Web | **guessmyfart.netlify.app**, redéployé à chaque push sur `main` (5-8 min : Netlify reclone le SDK Flutter) |
 | Supabase | projet `hbycfyxcwydygjbwxvsl`, distinct de Just Fart |
-| iOS | `codemagic.yaml` prêt mais **jamais lancé** — pas de build TestFlight à ce jour |
+| iOS | **sur TestFlight** depuis le 3 août 2026 (build 5, version 0.1.0), workflow Codemagic `ios-testflight`, déclenché **manuellement** |
 
 Le micro exige HTTPS : Netlify le fournit, une adresse IP locale ou `http://`
 ne marchera jamais. Un écran de **Diagnostic** (Profil → « Le micro ne marche
 pas ? ») dit ce que le navigateur autorise vraiment et teste la capture en 2 s.
+
+## Signature iOS — lire avant de toucher au build
+
+**Le profil de provisionnement est déposé à la main dans Codemagic**
+(`Code signing identities → iOS provisioning profiles`, nom `Guess My Fart`,
+expire en juillet 2027), exactement comme celui de Just Fart.
+
+C'est le point qui a coûté une après-midi le 3 août 2026 : le `codemagic.yaml`
+demande une signature *automatique* (`ios_signing` + `distribution_type`), donc
+Codemagic va chercher le profil chez Apple via la clé API. Cette requête
+revenait vide — *« No matching profiles found »* — alors que l'identifiant, le
+certificat, le profil et la fiche App Store Connect existaient tous. **Déposer
+le fichier du profil dans Codemagic a suffi.**
+
+Donc : si un jour la signature casse à nouveau, ne pars pas à la chasse chez
+Apple. Vérifie d'abord que le profil est toujours présent dans Codemagic, et
+redépose-le au besoin.
+
+Autres pièges rencontrés, pour mémoire :
+- L'identifiant `com.guessmyfart.app` est **pris par un autre développeur** —
+  les bundle IDs sont uniques à l'échelle d'Apple. D'où `com.bematerial.guessmyfart`.
+- Le certificat Apple Distribution est **unique pour tout le compte** et sert à
+  toutes les apps. Un seul certificat pour deux apps est normal.
+- `ITSAppUsesNonExemptEncryption = false` est dans l'`Info.plist` pour éviter la
+  question « Missing Compliance » à chaque envoi.
 
 ## État au 3 août 2026
 
