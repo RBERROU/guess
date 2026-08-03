@@ -103,33 +103,57 @@ déplacer côté serveur si le jeu sort du cercle privé.
 
 ## Démarrer
 
-Il faut un projet Supabase **distinct de Just Fart** — les deux ont une table
-`profiles`.
-
-1. créer le projet sur supabase.com
-2. y exécuter `supabase/schema.sql`
-3. lancer :
+Le backend est déjà en place, les identifiants sont en clair dans
+`lib/config/supabase_config.dart` (même convention que Just Fart : la clé
+publiable est publique par conception). Un clone du dépôt fonctionne
+immédiatement.
 
 ```
-flutter run --dart-define=SUPABASE_URL=https://xxx.supabase.co \
-            --dart-define=SUPABASE_ANON_KEY=eyJ...
+flutter pub get
+flutter run -d chrome
 ```
 
-Sans ces variables, l'app démarre sur un écran qui explique quoi faire plutôt
-que de planter.
+**Deux réglages Supabase indispensables**, faciles à oublier sur un nouveau
+projet : exécuter `supabase/schema.sql` **et** `migration_001_fk_profiles.sql`,
+puis activer **Authentication → Sign In / Providers → Anonymous Sign-Ins**.
+Sans ce dernier, personne ne peut ouvrir l'app.
+
+La migration 001 existe parce que `challenges` et `submissions` référençaient
+`auth.users` : l'API refusait alors de joindre le pseudo depuis `profiles`
+(« Could not find relationship … in the schema cache »).
 
 ---
 
-## État au 31 juillet 2026
+## Déploiement
 
-Projet créé, `flutter analyze` propre, 4 tests au vert. Le cœur de mesure, le
-schéma, les quatre écrans (liste, création, soumission, révélation) sont
-écrits.
+| | |
+|---|---|
+| Dépôt | `github.com/RBERROU/guess` (le dépôt s'appelle `guess`, le projet Flutter `guessmyfart`, l'identifiant `com.guessmyfart.app` — trois noms, c'est normal) |
+| Web | **guessmyfart.netlify.app**, redéployé à chaque push sur `main` (5-8 min : Netlify reclone le SDK Flutter) |
+| Supabase | projet `hbycfyxcwydygjbwxvsl`, distinct de Just Fart |
+| iOS | `codemagic.yaml` prêt mais **jamais lancé** — pas de build TestFlight à ce jour |
 
-**Jamais exécuté sur un vrai appareil** : le projet Supabase n'existe pas
-encore, et il n'y a pas de son sur le PC de Romain — donc aucun enregistrement
-réel n'a été fait.
+Le micro exige HTTPS : Netlify le fournit, une adresse IP locale ou `http://`
+ne marchera jamais. Un écran de **Diagnostic** (Profil → « Le micro ne marche
+pas ? ») dit ce que le navigateur autorise vraiment et teste la capture en 2 s.
 
-**Prochaine étape** : créer le projet Supabase, lancer l'app sur un téléphone,
-enregistrer un vrai pet et quelques imitations, et **comparer le classement
-machine au classement de l'oreille**. C'est ce test qui dira si le jeu tient.
+## État au 3 août 2026
+
+En ligne et utilisable. `flutter analyze` propre, 6 tests au vert.
+
+**Les micros fonctionnent** sur iPhone et Android, après deux corrections : la
+capture passe par le flux PCM avec repli sur fichier, et les messages
+distinguent « origine non sécurisée » de « permission refusée ».
+
+**Interface refaite** dans un style neutre calqué sur des captures de
+référence — fond gris clair, cartes blanches, bleu système, couleurs vives
+réservées aux icônes des tuiles de statistiques. Trois onglets : défis,
+classement, profil. Le premier essai en vert/marron a été rejeté par Romain.
+
+**Sécurité de la révélation vérifiée** en simulant trois joueurs : 9 tests
+passés, dont l'impossibilité de lire le secret ou les tentatives des autres
+avant la révélation, et d'en soumettre une après.
+
+**Le vrai test n'a pas encore eu lieu** : un pet, plusieurs imitations à
+l'aveugle, et **comparer le classement machine au classement de l'oreille**.
+C'est lui qui dira si le jeu tient. Tout le reste n'est que de la plomberie.

@@ -17,8 +17,9 @@ workflows:
     max_build_duration: 60
 
     integrations:
-      # A remplacer par le nom exact de l'integration creee dans Codemagic.
-      app_store_connect: GuessMyFart AppStore Key
+      # On REUTILISE l'integration de Just Fart : une cle App Store Connect vaut
+      # pour toute l'equipe Apple, pas pour une seule app. Rien a recreer.
+      app_store_connect: JustFart AppStore Key
 
     environment:
       ios_signing:
@@ -55,3 +56,4 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
+        submit_to_testflight: true
